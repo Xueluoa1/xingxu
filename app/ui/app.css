@@ -1,0 +1,45 @@
+/* ===== 程序版覆盖样式（在 style.css 之后加载） ===== */
+html,body{background:transparent!important}
+#layer{position:fixed;inset:0;overflow:hidden}
+/* 透明窗口里 backdrop-filter 只能模糊页面自身内容，玻璃磨砂改用壁纸副本 .frost 实现 */
+.wg{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.frost{position:absolute;inset:0;z-index:0;border-radius:inherit;overflow:hidden;pointer-events:none}
+.frost i{position:absolute;background-size:cover;background-position:center;filter:blur(7px) saturate(1.5) brightness(1.04);transform:translateZ(0)}
+.frost.g2 i{filter:blur(16px) saturate(1.5) brightness(1.2)}
+.wg .in{z-index:2}
+.tile .g.img{background:transparent!important;box-shadow:none!important}
+.tile .g.img img{width:100%;height:100%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,.25))}
+.p-mono .tile .g.img{filter:grayscale(1)}
+.todo-list li.empty{opacity:.5;justify-content:center;border:none}
+.lyl p.ph{font-size:1em!important;font-weight:400!important;opacity:.7!important;white-space:normal}
+#ctx .lab{cursor:default;opacity:.6;font-size:11.5px;padding:5px 12px 2px}#ctx .lab:hover{background:none}
+#ctx .dan{color:#ff8a80}
+#toast{bottom:16px}
+.wg.sel{outline:none}
+.wg:hover .rs{opacity:1}
+.wx-days b,[data-k=wxe],[data-k=twwxe]{font-family:"Segoe UI Emoji","Segoe UI Symbol",sans-serif}
+/* 拖动辅助线：吸附时显示对齐位置；Shift 锁定方向时显示移动轴 */
+.guides{position:absolute;inset:0;pointer-events:none;z-index:2147483000}
+.guides i{position:absolute;display:block}
+.guides .gv{width:0;border-left:1px dashed #ff4fa3;filter:drop-shadow(0 0 1px rgba(0,0,0,.6))}
+.guides .gh{height:0;border-top:1px dashed #ff4fa3;filter:drop-shadow(0 0 1px rgba(0,0,0,.6))}
+.guides .lk{border-color:rgba(120,200,255,.85);border-style:dotted}
+
+/* 相框：只显示图片，不叠加背景、边框、遮罩 */
+.wg[data-t=photo]{background:transparent!important;border:none!important;box-shadow:0 8px 24px rgba(0,0,0,.28)!important;backdrop-filter:none!important}
+.wg[data-t=photo] .wimg::after{display:none}
+.wg[data-t=photo] .frost{display:none}
+.wg[data-t=photo]:has(.ph-empty){box-shadow:none!important}
+.ph-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border:2px dashed rgba(255,255,255,.55);border-radius:inherit;background:rgba(0,0,0,.18)}
+.ph-empty span{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;background:rgba(0,0,0,.45);color:#fff;font-size:13px;cursor:pointer}
+.ph-empty span:hover{background:rgba(0,0,0,.6)}
+
+/* 相框绑定路径：无图时显示目标图标；拖入时高亮 */
+.ph-link{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border-radius:inherit;background:rgba(0,0,0,.28);color:#fff;font-size:13px;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.ph-link img{width:56px;height:56px;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,.4))}
+.ph-link .i{font-size:44px}
+.ph-link span{max-width:90%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ph-empty{flex-direction:column;gap:8px}
+.ph-empty small{color:rgba(255,255,255,.85);font-size:11.5px;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.wg[data-t=photo].linked{cursor:pointer}
+.wg[data-t=photo].over{outline:2px dashed #7cc4ff;outline-offset:3px}

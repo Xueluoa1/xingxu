@@ -1,0 +1,4 @@
+本目录内的 TranslucentTB 为第三方开源软件，用于实现任务栏真透明 / 亚克力效果。
+项目地址：https://github.com/TranslucentTB/TranslucentTB
+许可协议：GPL-3.0（见 LICENSE.md）
+星叙仅在"任务栏美化"开启时调用它，关闭或退出时还原。

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' file: data:; style-src 'self' 'unsafe-inline'; img-src 'self' file: data: blob:; script-src 'self'">
+<title>星叙 · 桌面插件</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div id="layer"></div>
+<div id="ctx"></div>
+<div id="crop" class="hide"><div class="mbox">
+  <div class="mt">调整裁剪区域<span>拖动选框移动 · 滚轮或滑块缩放 · 选框比例与插件一致</span></div>
+  <div id="cstage"><img id="cimg" alt=""><div id="crect"></div></div>
+  <div class="row"><span>缩放</span><input type="range" id="cz" min="100" max="400" value="100"><span id="czv" style="width:44px">100%</span>
+    <button class="btn" id="cReset">重置</button><div style="flex:1"></div><button class="btn" id="cCancel">取消</button><button class="btn pri" id="cOk">确定</button></div>
+</div></div>
+<div id="toast"></div>
+<input type="file" id="imgFile" accept="image/*" hidden>
+<input type="file" id="linkFile" hidden>
+<script src="common.js"></script>
+<script src="desk.js"></script>
+<script src="desk2.js"></script>
+<script src="desk3.js"></script>
+<script src="desk4.js"></script>
+</body>
+</html>

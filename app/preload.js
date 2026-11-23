@@ -1,0 +1,30 @@
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
+const role = new URLSearchParams(location.search).get('role') || 'cc';
+const on = ch => cb => ipcRenderer.on(ch, (_e, d) => cb(d));
+contextBridge.exposeInMainWorld('xx', {
+  role,
+  debug: !!process.env.XX_DEBUG,
+  getState: () => ipcRenderer.sendSync('state:get'),
+  setState: s => ipcRenderer.send('state:set', s),
+  onState: on('state'),
+  env: () => ipcRenderer.sendSync('env:get'),
+  onEnv: on('env'),
+  send: (to, ch, data) => ipcRenderer.send('relay', { to, ch, data }),
+  on: (ch, cb) => ipcRenderer.on('relay:' + ch, (_e, d) => cb(d)),
+  hit: h => ipcRenderer.send('hit', h),
+  media: cmd => ipcRenderer.send('media:cmd', cmd),
+  onMedia: on('media'), onLyrics: on('lyrics'), onSys: on('sys'), onWeather: on('weather'), onPause: on('pause'),
+  lyricBind: text => ipcRenderer.invoke('lyric:bind', text),
+  lyricNext: () => ipcRenderer.invoke('lyric:next'),
+  open: p => ipcRenderer.send('open', p),
+  pathOf: f => webUtils.getPathForFile(f),
+  iconFor: p => ipcRenderer.invoke('icon', p),
+  saveImage: d => ipcRenderer.invoke('img:save', d),
+  win: cmd => ipcRenderer.send('win', cmd),
+  exportCfg: () => ipcRenderer.invoke('cfg:export'),
+  importCfg: () => ipcRenderer.invoke('cfg:import'),
+  resetCfg: () => ipcRenderer.invoke('cfg:reset'),
+  openUrl: u => ipcRenderer.send('url', u),
+  quit: () => ipcRenderer.send('quit'),
+  tbHeal: () => ipcRenderer.send('tb:heal'),
+});

@@ -1,0 +1,13 @@
+{
+  "name": "xingxu",
+  "productName": "星叙",
+  "version": "1.0.0",
+  "description": "星叙 · Windows 桌面美化",
+  "author": "雪落a",
+  "homepage": "https://xueluo.online",
+  "main": "main.js",
+  "private": true,
+  "dependencies": {
+    "koffi": "3.3.8"
+  }
+}

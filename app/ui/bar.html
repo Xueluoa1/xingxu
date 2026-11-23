@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' file: data:; style-src 'self' 'unsafe-inline'; img-src 'self' file: data: blob:; script-src 'self'">
+<title>星叙 · 任务栏挂件</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="app.css">
+<style>
+body{color:#fff;font-size:12px;overflow:hidden}
+body.light{color:#111}
+.tbz{position:absolute;top:0;bottom:0;display:flex;align-items:center;gap:4px}
+.tw{height:calc(100% - 8px);max-height:40px}
+.tw:hover{background:rgba(255,255,255,calc(var(--bo,0) + .1))}
+body.light .tw:hover{background:rgba(0,0,0,calc(var(--bo,0) + .06))}
+</style>
+</head>
+<body>
+<div class="tbz" id="zl"></div>
+<div class="tbz" id="zr"></div>
+<script src="common.js"></script>
+<script src="bar.js"></script>
+</body>
+</html>

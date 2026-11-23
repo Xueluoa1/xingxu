@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' file: data:; style-src 'self' 'unsafe-inline'; img-src 'self' file: data: blob:; script-src 'self'">
+<title>星叙 · 控制中心</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="app.css">
+<style>
+#cc{left:0!important;top:0!important;right:0;bottom:0;width:auto!important;height:auto!important;box-shadow:none!important;border-radius:0!important;border:none!important}
+.cc-title{-webkit-app-region:drag}.cc-title .wbtn{-webkit-app-region:no-drag}
+/* 窗口无法模糊身后的桌面，玻璃主题改为更实的底色以保证可读 */
+body #cc.th-g1{background:linear-gradient(150deg,rgba(52,46,84,.95),rgba(30,28,48,.96))!important}
+body #cc.th-g2{background:linear-gradient(160deg,rgba(250,251,252,.97),rgba(236,240,243,.96))!important}
+#cc.th-light{background:linear-gradient(160deg,#f6f7f8,#e2e5e8)}
+.note{display:flex;gap:12px;align-items:flex-start;line-height:1.7;font-size:12.5px}.note>.i{font-size:16px;margin-top:3px;color:#b9b2ff}
+#cc.th-light .note>.i{color:#16181b}
+.zones.z2{grid-template-columns:1fr 1fr}
+.zoff{margin-top:10px;display:flex;align-items:center;gap:8px}.zoff input[type=range]{width:140px}
+.sw-c{height:6px;border-radius:3px;margin-bottom:8px;box-shadow:inset 0 0 0 1px rgba(128,128,128,.25)}
+.tin.city{width:200px}
+.icpick{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:300px}
+.icpick b{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;border:1px solid rgba(255,255,255,.14);font-weight:400}
+.icpick b .i{font-size:16px}
+.icpick b:hover{background:rgba(255,255,255,.08)}
+.icpick b.on{border-color:var(--brand);background:rgba(108,92,231,.18)}
+#cc.th-light .icpick b,#cc.th-neu .icpick b{border-color:rgba(0,0,0,.12)}
+.cbox{position:relative;display:inline-block}
+.csug{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:50;display:flex;flex-direction:column;background:#2a2740;border:1px solid rgba(255,255,255,.14);border-radius:8px;box-shadow:0 10px 26px rgba(0,0,0,.35);overflow:hidden;max-height:260px;overflow-y:auto}
+.csug:empty{display:none}
+.csug b{font-weight:400;font-size:12.5px;padding:7px 10px;cursor:pointer}
+.csug b:hover,.csug b.on{background:rgba(255,255,255,.1)}
+#cc.th-light .csug,#cc.th-neu .csug,#cc.th-g2 .csug{background:#fff;border-color:rgba(0,0,0,.1);box-shadow:0 10px 26px rgba(20,30,40,.18)}
+#cc.th-light .csug b:hover,#cc.th-light .csug b.on,#cc.th-neu .csug b:hover,#cc.th-neu .csug b.on,#cc.th-g2 .csug b:hover,#cc.th-g2 .csug b.on{background:rgba(0,0,0,.06)}
+.tin{width:180px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:6px;color:inherit;font:inherit;font-size:12.5px;padding:5px 9px;outline:none}
+#cc.th-light .tin,#cc.th-neu .tin{background:#fff;border-color:rgba(0,0,0,.12)}
+.lnk{color:inherit;text-decoration:underline;cursor:pointer}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.np .cover{background-size:cover!important}
+#toast{bottom:30px;right:30px}
+</style>
+</head>
+<body>
+<div id="cc">
+  <div class="cc-title" id="ccTitle">
+    <div class="logo">✦</div><span>星叙 · 控制中心</span><span class="muted" style="margin-left:6px" id="ver"></span>
+    <div class="sp"></div>
+    <div class="wbtn" data-act="min" title="最小化"><i class="i">&#xE921;</i></div>
+    <div class="wbtn cl" data-act="close" title="关闭（星叙继续在托盘运行）"><i class="i">&#xE8BB;</i></div>
+  </div>
+  <div class="cc-body">
+    <div class="nav" id="nav"></div>
+    <div class="page" id="page"></div>
+  </div>
+</div>
+<div id="toast"></div>
+<input type="file" id="lrcFile" accept=".lrc,.txt" hidden>
+<input type="file" id="imgFile" accept="image/*" hidden>
+<input type="file" id="linkFile" hidden>
+<input type="file" id="frostFile" accept="image/*" hidden>
+<script src="common.js"></script>
+<script src="cc.js"></script>
+<script src="cc2.js"></script>
+<script src="cc3.js"></script>
+</body>
+</html>
