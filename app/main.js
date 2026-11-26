@@ -86,11 +86,18 @@ function loadState() {
   return defState();
 }
 let saveTimer = null;
+function flushState() {
+  clearTimeout(saveTimer);
+  if (!S) return;
+  try {
+    fs.writeFileSync(CFG + '.tmp', JSON.stringify(S));
+    fs.renameSync(CFG + '.tmp', CFG);
+  } catch (e) { console.error(e); }
+}
 function saveState() {
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => { try { fs.writeFileSync(CFG + '.tmp', JSON.stringify(S)); fs.renameSync(CFG + '.tmp', CFG); } catch (e) { console.error(e); } }, 400);
+  saveTimer = setTimeout(flushState, 400);
 }
-function flushState() { clearTimeout(saveTimer); try { fs.writeFileSync(CFG, JSON.stringify(S)); } catch (_) {} }
 
 function broadcast(ch, data, exceptWc) {
   for (const k in W) { const b = W[k]; if (b && !b.isDestroyed() && b.webContents !== exceptWc) b.webContents.send(ch, data); }
@@ -171,7 +178,7 @@ function env() {
   const d = deskDisplay();
   return { version: VERSION, wa: d.workArea, bounds: d.bounds, sysLight: tbc.systemLight(), wall: wall.url, tb: tbResult, displays: displayList(), deskDisp: d.id === screen.getPrimaryDisplay().id ? 'primary' : String(d.id) };
 }
-// 桌面插件层跟随所选显示器；换屏后把超出范围的插件挪回可见区域
+// 工作区变化只更新窗口，桌面层按当前可用空间显示已保存的布局。
 let deskKey = '';
 function placeDesk() {
   const d = deskDisplay(), wa = d.workArea, key = d.id + JSON.stringify(wa);
@@ -179,14 +186,6 @@ function placeDesk() {
   const changed = deskKey !== '';
   deskKey = key;
   for (const k of ['desk', 'deskTop']) { const b = W[k]; if (b && !b.isDestroyed()) { b.setBounds(wa); b.setBounds(wa); } }
-  if (changed) {
-    let moved = false;
-    S.widgets.forEach(w => {
-      const x = Math.max(0, Math.min(w.x, wa.width - w.w)), y = Math.max(0, Math.min(w.y, wa.height - w.h));
-      if (x !== w.x || y !== w.y) { w.x = x; w.y = y; moved = true; }
-    });
-    if (moved) { saveState(); broadcast('state', S); }
-  }
   broadcast('env', env());
   if (W.desk && !W.desk.isDestroyed()) N.pinToDesktop(W.desk);
   if (changed) { wall.key = ''; syncWallpaper(); }
@@ -578,7 +577,27 @@ function shortcuts() {
 
 /* ---------------- IPC ---------------- */
 ipcMain.on('state:get', e => { e.returnValue = S; });
-ipcMain.on('state:set', (e, s) => { if (s && s.v === 1) { S = migrate(s); applyState(e.sender); } });
+ipcMain.on('state:set', (e, s) => {
+  if (!s || s.v !== 1) return;
+  // 其他窗口可能仍持有拖动前的快照。已有插件的位置只由桌面拖动更新。
+  const positions = new Map(S.widgets.map(w => [w.id, w]));
+  for (const w of s.widgets) {
+    const saved = positions.get(w.id);
+    if (saved) { w.x = saved.x; w.y = saved.y; }
+  }
+  S = migrate(s);
+  applyState(e.sender);
+});
+ipcMain.on('widget:geometry', (e, { id, x, y, w, h }) => {
+  if (![W.desk, W.deskTop].some(b => b && !b.isDestroyed() && b.webContents === e.sender)) return;
+  const widget = S.widgets.find(item => item.id === id);
+  if (!widget || widget.lock || S.settings.lockAll) return;
+  if (Number.isFinite(x) && Number.isFinite(y)) Object.assign(widget, { x, y });
+  else if (Number.isFinite(w) && Number.isFinite(h) && w >= 80 && h >= 70) Object.assign(widget, { w, h });
+  else return;
+  flushState();
+  broadcast('state', S);
+});
 ipcMain.on('env:get', e => { e.returnValue = { ...env(), media, weathers }; });
 ipcMain.on('relay', (e, { to, ch, data }) => {
   if (to === 'main') { if (ch === 'cc') openCC(data); return; }
@@ -605,14 +624,8 @@ ipcMain.on('open', (_e, p) => {
   else shell.openPath(p);
 });
 ipcMain.on('url', (_e, u) => { if (/^https:\/\//.test(u)) shell.openExternal(u); });
-ipcMain.handle('icon', async (_e, p) => {
-  try {
-    let t = p;
-    if (/\.lnk$/i.test(p)) { try { const l = shell.readShortcutLink(p); if (l.icon && fs.existsSync(l.icon)) t = l.icon; else if (l.target && fs.existsSync(l.target)) t = l.target; } catch (_) {} }
-    const im = await app.getFileIcon(t, { size: 'large' });
-    return im.isEmpty() ? '' : im.toDataURL();
-  } catch (_) { return ''; }
-});
+const { fileIcon, refreshOrganizerIcons } = require('./file-icons');
+ipcMain.handle('icon', (_e, p) => fileIcon(p));
 ipcMain.handle('img:save', (_e, d) => {
   const m = /^data:image\/(\w+);base64,(.+)$/.exec(d || ''); if (!m) return '';
   const f = path.join(IMG, uid() + '.' + (m[1] === 'jpeg' ? 'jpg' : m[1]));
@@ -632,7 +645,7 @@ ipcMain.handle('cfg:export', async e => {
 ipcMain.handle('cfg:import', async e => {
   const r = await dialog.showOpenDialog(BrowserWindow.fromWebContents(e.sender), { filters: [{ name: 'JSON', extensions: ['json'] }], properties: ['openFile'] });
   if (r.canceled) return null;
-  try { const o = JSON.parse(fs.readFileSync(r.filePaths[0], 'utf8')); if (o.v !== 1) return false; S = migrate(o); applyState(null); return true; } catch (_) { return false; }
+  try { const o = JSON.parse(fs.readFileSync(r.filePaths[0], 'utf8')); if (o.v !== 1) return false; S = migrate(o); refreshOrganizerIcons(S); applyState(null); return true; } catch (_) { return false; }
 });
 ipcMain.handle('cfg:reset', () => { S = defState(); applyState(null); return true; });
 ipcMain.on('quit', () => app.quit());
@@ -644,6 +657,7 @@ app.on('second-instance', () => openCC());
 app.whenReady().then(() => {
   N = require('./native');
   S = loadState();
+  if (refreshOrganizerIcons(S)) flushState();
   syncWallpaper();
   setInterval(syncWallpaper, 10000);
   W.desk = overlay('desk');

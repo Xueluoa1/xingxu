@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('xx', {
   debug: !!process.env.XX_DEBUG,
   getState: () => ipcRenderer.sendSync('state:get'),
   setState: s => ipcRenderer.send('state:set', s),
+  setWidgetGeometry: data => ipcRenderer.send('widget:geometry', data),
   onState: on('state'),
   env: () => ipcRenderer.sendSync('env:get'),
   onEnv: on('env'),

@@ -45,9 +45,9 @@ html,body{height:100%;overflow:hidden;font-family:var(--ui);user-select:none;-we
 .p-glass2 .todo-in input{background:#fff;border-color:rgba(0,0,0,.06)}
 .p-glass2 .ctl .i:hover{color:#16181b}
 /* ===== 液态玻璃（玻璃 / 玻璃2 共用质感：高透明 + 细白高光边 + 细虹彩描边 + 柔和落影） ===== */
-.p-glass,.p-glass2{border:.5px solid rgba(255,255,255,.45);
-  box-shadow:inset 0 .5px 0 rgba(255,255,255,.75),
-    inset 0 -18px 26px -22px rgba(0,0,0,.22),12px 18px 34px -14px rgba(0,0,0,.32),0 2px 6px rgba(0,0,0,.06)}
+.p-glass,.p-glass2{border:.5px solid rgba(255,255,255,calc(.45 * var(--glass-opacity,1)));
+  box-shadow:inset 0 .5px 0 rgba(255,255,255,calc(.75 * var(--glass-opacity,1))),
+    inset 0 -18px 26px -22px rgba(0,0,0,calc(.22 * var(--glass-opacity,1))),12px 18px 34px -14px rgba(0,0,0,calc(.32 * var(--glass-opacity,1))),0 2px 6px rgba(0,0,0,calc(.06 * var(--glass-opacity,1)))}
 .p-glass::before,.p-glass2::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;
   background:linear-gradient(165deg,rgba(255,255,255,.3) 0%,rgba(255,255,255,.06) 30%,transparent 55%)}
 .p-glass::after,.p-glass2::after{content:"";position:absolute;inset:0;border-radius:inherit;padding:.75px;pointer-events:none;z-index:3;
@@ -57,7 +57,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--ui);user-select:none;-we
 .p-glass{background:linear-gradient(150deg,rgba(255,255,255,calc(var(--op) * .12)),rgba(255,255,255,calc(var(--op) * .03)));color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.28);
   backdrop-filter:blur(6px) saturate(1.5) brightness(1.04);-webkit-backdrop-filter:blur(6px) saturate(1.5) brightness(1.04)}
 /* 玻璃2：奶白透明 */
-.p-glass2{background:linear-gradient(160deg,rgba(255,255,255,calc(.04 + var(--op) * .45)),rgba(246,248,250,calc(.02 + var(--op) * .38)));color:#16181b;
+.p-glass2{background:linear-gradient(160deg,rgba(255,255,255,calc(var(--op) * .49)),rgba(246,248,250,calc(var(--op) * .40)));color:#16181b;
   backdrop-filter:blur(14px) saturate(1.5) brightness(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.5) brightness(1.2)}
 /* 玻璃3：纯色透明 */
 /* ===== 拟态：浅灰同色底 + 左上高光 / 右下暗影的凸起与内凹 ===== */

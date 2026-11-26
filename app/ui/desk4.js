@@ -4,8 +4,11 @@ L.addEventListener('contextmenu',ev=>{
   ev.preventDefault();const e=ev.target.closest('.wg');if(!e)return;
   const w=findW(e.dataset.id);selectW(w.id);const p=effPreset(w);
   const tl=ev.target.closest('.tile[draggable]');CTX.dataset.ti=tl?tl.dataset.i:'';
+  const boxItem=ev.target.closest('[data-a=boxItem]');
+  const entry=boxItem?w.items[Number(boxItem.dataset.i)]:null;
+  CTX.dataset.boxPath=entry?.p||'';
   const dock=w.type==='launch'||w.type==='sysentry',lab=t=>`<div class="lab">${t}</div>`;
-  CTX.innerHTML=`${tl?`<div data-c="tdel"><i class="i">${IC.del}</i>从快捷启动移除「${esc(w.items[+tl.dataset.i].n)}」</div><hr>`:''}${lab(WTYPES[w.type].n+' · 预设样式')}
+  CTX.innerHTML=`${entry?`<div data-c="boxRemove"><i class="i">${IC.del}</i>从收纳盒移除「${esc(entry.n)}」</div><hr>`:''}${tl?`<div data-c="tdel"><i class="i">${IC.del}</i>从快捷启动移除「${esc(w.items[+tl.dataset.i].n)}」</div><hr>`:''}${lab(WTYPES[w.type].n+' · 预设样式')}
     <div class="pre">${Object.entries(PRESETS).map(([k,n])=>`<span data-c="pre" data-v="${k}" class="${p===k?'on':''}">${n}</span>`).join('')}</div><hr>
     ${lab('图片填充'+(w.s.img?'':' · 选择方式后上传图片'))}
     <div class="pre"><span data-c="fit" data-v="stretch" class="${w.s.img&&w.s.fit==='stretch'?'on':''}">拉伸填充</span><span data-c="fit" data-v="cover" class="${w.s.img&&w.s.fit!=='stretch'?'on':''}">裁切填充</span></div>
@@ -40,6 +43,9 @@ CTX.addEventListener('click',ev=>{
   if(c==='pre'){w.s.preset=a.dataset.v;styleWidget(w);toast(IC.style,`已将「${WTYPES[w.type].n}」切换为「${PRESETS[a.dataset.v]}」样式`)}
   if(c==='edit'){X.send('main','cc','widgets:'+w.id);return}
   if(c==='dir'){setDir(w,a.dataset.v);return}
+  if(c==='boxRemove'){
+    w.items=w.items.filter(item=>item.p!==CTX.dataset.boxPath);remount(w);save();return;
+  }
   if(c==='tdel'){const ti=+CTX.dataset.ti,[it]=w.items.splice(ti,1);remount(w);toast(IC.del,`已从快捷启动移除「${esc(it.n)}」`)}
   if(c==='fit'){if(w.s.img){w.s.fit=a.dataset.v;styleWidget(w);if(a.dataset.v==='cover'&&w.s.iw)cropFor(w)}else{pickImage(w,a.dataset.v);return}}
   if(c==='crop'){cropFor(w);return}

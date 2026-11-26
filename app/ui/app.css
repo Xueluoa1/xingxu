@@ -3,6 +3,11 @@ html,body{background:transparent!important}
 #layer{position:fixed;inset:0;overflow:hidden}
 /* 透明窗口里 backdrop-filter 只能模糊页面自身内容，玻璃磨砂改用壁纸副本 .frost 实现 */
 .wg{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+/* 背景不透明度同时控制壁纸副本、填充图片与玻璃高光；插件内容单独绘制。 */
+.wg:is(.p-glass,.p-glass2):not([data-t=photo]){--glass-opacity:var(--op,1)}
+.wg:is(.p-glass,.p-glass2):not([data-t=photo]) > :is(.frost,.wimg),
+.wg:is(.p-glass,.p-glass2):not([data-t=photo])::before,
+.wg:is(.p-glass,.p-glass2):not([data-t=photo])::after{opacity:var(--glass-opacity)}
 .frost{position:absolute;inset:0;z-index:0;border-radius:inherit;overflow:hidden;pointer-events:none}
 .frost i{position:absolute;background-size:cover;background-position:center;filter:blur(7px) saturate(1.5) brightness(1.04);transform:translateZ(0)}
 .frost.g2 i{filter:blur(16px) saturate(1.5) brightness(1.2)}
@@ -33,6 +38,31 @@ html,body{background:transparent!important}
 .ph-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border:2px dashed rgba(255,255,255,.55);border-radius:inherit;background:rgba(0,0,0,.18)}
 .ph-empty span{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;background:rgba(0,0,0,.45);color:#fff;font-size:13px;cursor:pointer}
 .ph-empty span:hover{background:rgba(0,0,0,.6)}
+
+/* 收纳盒按插件自身的宽高比切换布局；标题区可用于移动盒子。 */
+.wg[data-t=organizer]{container:organizer / size}
+.wg[data-t=organizer].over{outline:2px dashed var(--ac);outline-offset:-3px}
+.box-inner .ttl{flex:none}
+.box-grid{display:flex;flex-flow:row wrap;justify-content:center;align-items:center;align-content:safe center;
+  gap:8px 4px;min-height:0;min-width:0;flex:1;overflow:auto;container-type:size;
+  scrollbar-width:thin;overscroll-behavior:contain;cursor:default}
+.box-item{--box-scale:1;--unit:calc(1px * var(--box-scale));
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  width:min(100%,calc(68 * var(--unit)));min-width:0;gap:calc(4 * var(--unit));
+  padding:calc(4 * var(--unit));border:0;border-radius:calc(6 * var(--unit));
+  background:transparent;color:inherit;font:inherit;text-shadow:inherit;cursor:pointer}
+.box-item img,.box-item .i{width:calc(30 * var(--unit));height:calc(30 * var(--unit));object-fit:contain;
+  font-size:calc(26 * var(--unit));line-height:calc(30 * var(--unit))}
+.box-item span{width:100%;font-size:calc(.83em * var(--box-scale));line-height:1.2;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
+.box-item:hover,.box-item:focus-visible{background:color-mix(in srgb,var(--ac) 18%,transparent)}
+.box-empty{text-align:center;opacity:.7;font-size:.86em}
+@container organizer (min-aspect-ratio:3/2){
+  .box-grid{flex-wrap:nowrap;gap:0;overflow:clip}
+  /* 每项占 68px 加两侧各 2px，按图标区的实际宽高同比缩放。 */
+  .box-item{--box-scale:min(1,calc(100cqw / (72px * var(--box-count))),calc(100cqh / (42px + 1em)));
+    margin-inline:calc(2 * var(--unit))}
+}
 
 /* 相框绑定路径：无图时显示目标图标；拖入时高亮 */
 .ph-link{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border-radius:inherit;background:rgba(0,0,0,.28);color:#fff;font-size:13px;text-shadow:0 1px 3px rgba(0,0,0,.6)}

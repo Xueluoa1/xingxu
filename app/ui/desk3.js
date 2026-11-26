@@ -7,7 +7,8 @@ L.addEventListener('pointerdown',ev=>{
   const e=ev.target.closest('.wg');if(!e||ev.button!==0)return;
   hideCtx();const w=findW(e.dataset.id);selectW(w.id);
   if(w.lock||S.settings.lockAll||ev.target.closest('input,[data-a]'))return;
-  drag={w,e,rs:ev.target.classList.contains('rs'),sx:ev.clientX,sy:ev.clientY,ox:w.x,oy:w.y,ow:w.w,oh:w.h,moved:false};
+  const pos=visiblePosition(w);
+  drag={w:{...w,...pos},e,rs:ev.target.classList.contains('rs'),sx:ev.clientX,sy:ev.clientY,ox:pos.x,oy:pos.y,ow:w.w,oh:w.h,moved:false};
   e.classList.add('drag');try{e.setPointerCapture(ev.pointerId)}catch(_){}reportHit();
 });
 // 吸附规则：屏幕四边与中线；附近插件的同侧边缘 / 中线（对齐）与 12px 间距（并排）。
@@ -25,8 +26,9 @@ function snapLines(w,x,y,horiz){
   const VW=innerWidth,VH=innerHeight,out=[];
   const pos=horiz?x:y,len=horiz?w.w:w.h,o1=horiz?y:x,o2=o1+(horiz?w.h:w.w),full=horiz?VH:VW;
   out.push({k:'s',p:0,a:0,b:full},{k:'e',p:horiz?VW:VH,a:0,b:full},{k:'c',p:(horiz?VW:VH)/2,a:0,b:full});
-  S.widgets.forEach(o=>{if(o===w||!o.vis||mine(o)!==mine(w))return;
-    const op=horiz?o.x:o.y,ol=horiz?o.w:o.h,q1=horiz?o.y:o.x,q2=q1+(horiz?o.h:o.w);
+  S.widgets.forEach(o=>{if(o.id===w.id||!o.vis||mine(o)!==mine(w))return;
+    const pos=visiblePosition(o);
+    const op=horiz?pos.x:pos.y,ol=horiz?o.w:o.h,q1=horiz?pos.y:pos.x,q2=q1+(horiz?o.h:o.w);
     if(gapOf(o1,o2,q1,q2)>NEAR)return; // 另一方向离得太远，不参与
     const a=Math.min(o1,q1),b=Math.max(o2,q2);
     out.push({k:'s',p:op,a,b},{k:'e',p:op+ol,a,b},{k:'c',p:op+ol/2,a,b});
@@ -68,9 +70,58 @@ addEventListener('pointermove',ev=>{
   showGuides(gs);
   Object.assign(e.style,{left:w.x+'px',top:w.y+'px',width:w.w+'px',height:w.h+'px'});
   const im=e.querySelector(':scope>.wimg');if(drag.rs&&im)placeImg(w,im);
-  placeFrost(w,e);if(w.type==='lyrics')onLine(true);
+  placeFrost(w,e,w);if(w.type==='lyrics')onLine(true);
 });
-addEventListener('pointerup',()=>{if(DBG)console.log('pu',!!drag,drag&&drag.moved);clearGuides();if(!drag)return;drag.e.classList.remove('drag');const m=drag.moved;drag=null;if(m)save();reportHit()});
+addEventListener('pointerup',()=>{
+  if(!drag)return;
+  const {w,e,rs,moved}=drag;
+  drag=null;
+  clearGuides();e.classList.remove('drag');
+  const current=findW(w.id);
+  if(moved && current && !current.lock && !S.settings.lockAll){
+    const geometry=rs?{w:w.w,h:w.h}:{x:w.x,y:w.y};
+    Object.assign(current,geometry);
+    X.setWidgetGeometry({id:w.id,...geometry});
+  }
+  if(moved)renderWidgets();else reportHit();
+});
+addEventListener('pointercancel',()=>{
+  if(!drag)return;
+  drag=null;clearGuides();renderWidgets();
+});
+
+// 收纳盒只保存文件路径。图标读取期间窗口可能收到新的插件状态。
+async function addBoxFiles(id,files){
+  const paths=[...new Set(files.map(file=>X.pathOf(file)).filter(Boolean))];
+  const links=[];
+  for(const path of paths)links.push(await linkOf(path));
+  const box=findW(id);
+  if(!box||box.type!=='organizer')return;
+  box.items??=[];
+  const seen=new Set(box.items.map(item=>item.p.toLowerCase()));
+  let added=0;
+  for(const link of links){
+    if(!link||seen.has(link.p.toLowerCase()))continue;
+    seen.add(link.p.toLowerCase());
+    box.items.push(link);added++;
+  }
+  if(added){remount(box);save()}
+  toast(added?IC.add:IC.warn,added?`已添加 ${added} 项到收纳盒`:paths.length?'这些项目已在收纳盒中':'无法读取拖入项目的本地路径');
+}
+function openBoxItem(button){
+  const box=findW(button.closest('.wg').dataset.id);
+  const item=box?.items?.[Number(button.dataset.i)];
+  if(item)X.open(item.p);
+}
+L.addEventListener('dblclick',ev=>{
+  const item=ev.target.closest('[data-a=boxItem]');
+  if(item)openBoxItem(item);
+});
+L.addEventListener('keydown',ev=>{
+  if(ev.key==='Enter'&&!ev.repeat&&ev.target.matches('[data-a=boxItem]')){
+    ev.preventDefault();openBoxItem(ev.target);
+  }
+});
 
 // 插件内操作
 L.addEventListener('click',ev=>{
@@ -94,6 +145,11 @@ L.addEventListener('dragstart',ev=>{
 L.addEventListener('dragend',()=>{dndT=null;dndInside=false;reportHit();qa('.dock.over').forEach(d=>d.classList.remove('over'));qa('.tile.dragging').forEach(t=>t.classList.remove('dragging'))});
 document.addEventListener('dragover',ev=>{
   const dk=ev.target.closest&&ev.target.closest('[data-dock]'),files=[...ev.dataTransfer.types].includes('Files');
+  const box=ev.target.closest?.('.wg[data-t=organizer]');
+  if(box&&files&&!dndT){
+    qa('.wg.over,.dock.over').forEach(el=>{if(el!==box)el.classList.remove('over')});
+    ev.preventDefault();ev.dataTransfer.dropEffect='link';box.classList.add('over');return;
+  }
   const pw=!dk&&!dndT&&files&&ev.target.closest&&ev.target.closest('.wg[data-t=photo]');qa('.wg.over').forEach(x=>x!==pw&&x.classList.remove('over'));
   if(pw){ev.preventDefault();pw.classList.add('over');ev.dataTransfer.dropEffect='link';return}
   qa('.dock.over').forEach(d=>d!==dk&&d.classList.remove('over'));
@@ -104,6 +160,11 @@ function dockIndex(dk,ev){const v=dk.classList.contains('v');let i=0;dk.querySel
 document.addEventListener('drop',async ev=>{
   ev.preventDefault();const dk=ev.target.closest&&ev.target.closest('[data-dock]');
   qa('.dock.over,.wg.over').forEach(d=>d.classList.remove('over'));
+  const box=ev.target.closest?.('.wg[data-t=organizer]');
+  if(box){
+    if(!dndT&&ev.dataTransfer.files.length)await addBoxFiles(box.dataset.id,[...ev.dataTransfer.files]);
+    dndT=null;dndInside=false;reportHit();return;
+  }
   const pw=!dk&&!dndT&&ev.target.closest&&ev.target.closest('.wg[data-t=photo]');
   if(pw&&ev.dataTransfer.files.length){const w=findW(pw.dataset.id),p=X.pathOf(ev.dataTransfer.files[0]);
     if(p){w.link=await linkOf(p);remount(w);save();toast(IC.add,`已绑定「${esc(w.link.n)}」，双击相框即可打开`)}else toast(IC.warn,'无法绑定该项目（如「此电脑」请用系统功能入口插件）');

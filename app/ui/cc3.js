@@ -46,7 +46,7 @@ P.addEventListener('click',async ev=>{
   if(x=q('[data-pal]')){S.tb.c1=x.dataset.pal;S.on.tb=true;save();renderPage();setTimeout(renderPage,700);return}
   if(x=q('[data-add]')){const t=x.dataset.add,d=WTYPES[t];
     const w={id:uid(),type:t,x:Math.round(ENV.wa.width/2-d.w/2+Math.random()*80),y:Math.round(ENV.wa.height/2-d.h/2+Math.random()*60),w:d.w,h:d.h,vis:true,top:false,lock:false,s:newStyle()};
-    if(t==='launch')w.items=[];S.widgets.push(w);selW=w.id;S.on.widgets=true;if(t==='lyrics')S.on.dlyric=true;if(t==='photo')w.s.fit='cover';save();renderPage();toast(d.ic,`已添加「${d.n}」到桌面（Win + D 查看），可直接拖动摆放`);return}
+    if(t==='launch'||t==='organizer')w.items=[];S.widgets.push(w);selW=w.id;S.on.widgets=true;if(t==='lyrics')S.on.dlyric=true;if(t==='photo')w.s.fit='cover';save();renderPage();toast(d.ic,`已添加「${d.n}」到桌面（Win + D 查看），可直接拖动摆放`);return}
   if(x=q('[data-wt]')){const w=S.widgets.find(o=>o.id===x.closest('[data-pick]').dataset.pick),a=x.dataset.wt;
     if(a==='vis')w.vis=!w.vis;if(a==='top')w.top=!w.top;if(a==='lock')w.lock=!w.lock;if(a==='del'){S.widgets=S.widgets.filter(o=>o!==w);if(selW===w.id)selW=null}
     save();renderPage();return}

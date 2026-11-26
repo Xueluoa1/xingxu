@@ -79,5 +79,5 @@ window.onLive=k=>{
   if(k==='media'){updateMedia();if(!LIVE.lines.length){qa('.wg').forEach(fillLyrics);onLine(true)}else onLine()}
   if(k==='sys')updateDynamic();
   if(k==='weather')updateWeather();
-  if(k==='env'){S.widgets.forEach(w=>styleWidget(w));reportHit()}
+  if(k==='env'){S.widgets.forEach(w=>{if(!drag||drag.w.id!==w.id)styleWidget(w)});reportHit()}
 };

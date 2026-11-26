@@ -12,6 +12,13 @@ function reportHit(){cancelAnimationFrame(hitRaf);hitRaf=requestAnimationFrame((
   const c=$('#ctx');if(c.style.display==='block'){const b=c.getBoundingClientRect();r.push([b.left,b.top,b.width,b.height])}
   X.hit({rects:r,capture:!!(drag||cropOpen||menuOpen||dndInside)})})}
 
+// 保留拖动时允许的部分越界。当前屏幕太小时，仅临时把插件移到可见范围内。
+function visiblePosition(w) {
+  const { width, height } = ENV.wa;
+  const x = w.x < 40 - w.w || w.x > width - 40 ? clamp(w.x, 0, Math.max(0, width - w.w)) : w.x;
+  const y = w.y < 0 || w.y > height - 30 ? clamp(w.y, 0, Math.max(0, height - w.h)) : w.y;
+  return { x, y };
+}
 function renderWidgets(){
   L.querySelectorAll('.wg').forEach(e=>e.remove());
   if(S.on.widgets)S.widgets.forEach(w=>{
@@ -29,7 +36,7 @@ function placeImg(w,im){
   if(!w.s.iw){im.style.backgroundSize='cover';im.style.backgroundPosition='center';return}
   const b=cropBox(w,w.w,w.h);im.style.backgroundSize=`${b.bw}px ${b.bh}px`;im.style.backgroundPosition=`${b.x}px ${b.y}px`}
 // 玻璃风格：用壁纸副本模拟磨砂（按插件在屏幕上的位置对齐）
-function placeFrost(w,e){
+function placeFrost(w,e,{x,y}=visiblePosition(w)){
   // 动态壁纸软件无法被读取：用户指定了磨砂背景图片时优先使用它
   const src=S.settings.frostImg||ENV.wall;
   const p=effPreset(w),on=(p==='glass'||p==='glass2')&&src&&S.settings.frost!==false&&!w.s.img&&w.type!=='photo';
@@ -37,13 +44,14 @@ function placeFrost(w,e){
   if(!on){if(f)f.remove();return}
   if(!f){f=document.createElement('div');f.className='frost';f.innerHTML='<i></i>';e.prepend(f)}
   const i=f.firstChild;i.style.backgroundImage=`url("${src}")`;i.style.backgroundSize='cover';i.style.backgroundPosition='center';
-  Object.assign(i.style,{left:-(w.x+ox())+'px',top:-(w.y+oy())+'px',width:ENV.bounds.width+'px',height:ENV.bounds.height+'px'});
+  Object.assign(i.style,{left:-(x+ox())+'px',top:-(y+oy())+'px',width:ENV.bounds.width+'px',height:ENV.bounds.height+'px'});
   f.classList.toggle('g2',p==='glass2')}
 function styleWidget(w,e){
   e=e||L.querySelector(`.wg[data-id="${w.id}"]`);if(!e)return;
   const p=effPreset(w);
   e.className=`wg p-${p}${w.lock||S.settings.lockAll?' locked':''}${selW===w.id?' sel':''}`;
-  Object.assign(e.style,{left:w.x+'px',top:w.y+'px',width:w.w+'px',height:w.h+'px',zIndex:5});
+  const pos=visiblePosition(w);
+  Object.assign(e.style,{left:pos.x+'px',top:pos.y+'px',width:w.w+'px',height:w.h+'px',zIndex:5});
   e.style.setProperty('--op',w.s.op/100);e.style.setProperty('--ac',w.s.ac||PRESET_AC[p]);
   e.style.setProperty('--r',(w.s.r??PRESET_R[p])+'px');e.style.setProperty('--fs',(14*w.s.fs/100)+'px');e.style.setProperty('--wf',`"${w.s.font}"`);
   e.style.background=w.s.bg?hexA(w.s.bg,w.s.op/100):'';e.dataset.t=w.type;
@@ -52,7 +60,7 @@ function styleWidget(w,e){
   if(w.s.img){if(!im){im=document.createElement('div');im.className='wimg';e.prepend(im)}
     im.style.backgroundImage=`url("${w.s.img}")`;im.style.setProperty('--dim',(w.s.imgDim??25)/100);placeImg(w,im)}
   else if(im)im.remove();
-  placeFrost(w,e);
+  placeFrost(w,e,pos);
   if(w.type==='lyrics'){const lt=LIGHT_PRESETS.includes(p);e.style.setProperty('--lc',lyC(lt));e.style.setProperty('--lh',S.ly.hc||LY_HI[p]||lyH(lt));e.style.opacity=S.ly.op/100}
 }
 const dockItems=w=>w.type==='sysentry'?SYS_ITEMS.map(k=>({k})):(w.items||[]);
@@ -61,6 +69,14 @@ function dockHTML(w){
   const t=items.map((it,i)=>{const d=it.k?SC[it.k]:it;const g=d.icon?`<div class="g img"><img src="${d.icon}" alt=""></div>`:`<div class="g" style="background:${d.bg||'#5b6474'}"><i class="i">${d.ic||IC.file}</i></div>`;
     return `<div class="tile" data-a="tile" data-i="${i}" ${sys?'':'draggable="true"'} title="${esc(d.n)}">${g}<span>${esc(d.n)}</span></div>`}).join('');
   return `<div class="in" style="padding:8px 10px"><div class="dock ${w.s.dir==='v'?'v':''}" ${sys?'':'data-dock="1"'}>${t||'<div class="dock-empty">把桌面快捷方式或文件拖到这里</div>'}</div></div>`}
+function organizerHTML(w,head){
+  const tiles=(w.items||[]).map((item,index)=>{
+    const icon=item.icon?`<img src="${esc(item.icon)}" draggable="false" alt="">`:`<i class="i">${IC.file}</i>`;
+    return `<button type="button" class="box-item" data-a="boxItem" data-i="${index}" title="${esc(item.p)}">${icon}<span>${esc(item.n)}</span></button>`;
+  });
+  const content=tiles.length?tiles.join(''):'<div class="box-empty">拖入文件、程序或快捷方式</div>';
+  return `<div class="in box-inner">${head}<div class="box-grid" data-a="boxGrid" style="--box-count:${Math.max(1,tiles.length)}">${content}</div></div>`;
+}
 function remount(w){const e=L.querySelector(`.wg[data-id="${w.id}"]`);if(e){mountWidget(w,e);styleWidget(w,e);updateDynamic();reportHit()}}
 function setDir(w,v){w.s.dir=v;if((v==='v'&&w.w>w.h)||(v==='h'&&w.h>w.w)){const t=w.w;w.w=Math.max(80,w.h);w.h=Math.max(70,t)}remount(w);save()}
 function calHTML(){const now=new Date(),y=now.getFullYear(),m=now.getMonth(),f=new Date(y,m,1).getDay(),dn=new Date(y,m+1,0).getDate(),pd=new Date(y,m,0).getDate();
@@ -86,6 +102,7 @@ function mountWidget(w,e){
     case 'todo':h=`<div class="in">${head}<div class="todo-in"><input placeholder="添加待办，回车保存" data-k="tin"></div><ul class="todo-list" data-k="tl"></ul></div>`;break;
     case 'launch':case 'sysentry':h=dockHTML(w);break;
     case 'calendar':h=calHTML();break;
+    case 'organizer':h=organizerHTML(w,head);break;
     case 'photo':h=w.s.img?'':w.link?`<div class="ph-link">${w.link.icon?`<img src="${w.link.icon}" alt="">`:`<i class="i">${IC.file}</i>`}<span>${esc(w.link.n)}</span></div>`:`<div class="ph-empty"><span data-a="photoUp"><i class="i">${t.ic}</i>点击上传图片</span><small>也可以把程序或文件拖进来，绑定后双击打开</small></div>`;break;
   }
   e.innerHTML=h+'<div class="rs"></div>';
